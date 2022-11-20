@@ -4,6 +4,13 @@ from joblib import load
 
 from mlops.utils import get_all_h_param_comb, tune_and_save
 from sklearn import svm, metrics
+from sklearn import datasets
+from mlops.utils import (
+    preprocess_digits,
+    train_dev_test_split)
+
+digits = datasets.load_digits()
+data, label = preprocess_digits(digits)
 
 # test case to check if all the combinations of the hyper parameters are indeed getting created
 def test_get_h_param_comb():
@@ -36,22 +43,6 @@ def helper_create_bin_data(n=100, d=7):
     y_train[n:] = 1
 
     return x_train, y_train
-
-def test_tune_and_save():    
-    h_param_comb = helper_h_params()
-    x_train, y_train = helper_create_bin_data(n=100, d=7)
-    x_dev, y_dev = x_train, y_train
-
-    clf = svm.SVC()
-    metric = metrics.accuracy_score
-    
-    model_path = "test_run_model_path.joblib"
-    actual_model_path = tune_and_save(clf, x_train, y_train, x_dev, y_dev, metric, h_param_comb, model_path)
-
-    assert actual_model_path == model_path
-    assert os.path.exists(actual_model_path)
-    assert type(load(actual_model_path)) == type(clf)
-
 
 def test_not_biased():    
     h_param_comb = helper_h_params()
@@ -87,6 +78,25 @@ def test_predicts_all():
     predicted = best_model.predict(x_test)
 
     assert set(predicted) == set(y_test)
+
+def test_train_dev_test_split_same_random_seed():
+    x_train, y_train, x_dev, y_dev, x_test, y_test = train_dev_test_split(
+        data, label, 0.8, 0.1,11
+    )
+    x_train1, y_train1, x_dev1, y_dev1, x_test1, y_test1 = train_dev_test_split(
+        data, label, 0.8, 0.1, 11
+    )
+    assert all([a == b for a, b in zip(y_train, y_train1)])
+
+def test_train_dev_test_split_diffrent_random_seed():
+    x_train, y_train, x_dev, y_dev, x_test, y_test = train_dev_test_split(
+        data, label, 0.8, 0.1,11
+    )
+    x_train2, y_train2, x_dev2, y_dev2, x_test2, y_test2 = train_dev_test_split(
+        data, label, 0.8, 0.1, 15
+    )
+    assert all([a == b for a, b in zip(y_train, y_train2)]) == False
+
 
 # what more test cases should be there
 # irrespective of the changes to the refactored code.

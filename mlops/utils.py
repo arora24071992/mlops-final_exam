@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score
-from joblib import dump
+from sklearn.metrics import f1_score,classification_report
+from joblib import dump,load
 from sklearn import svm, tree
+
 import pdb
 
 
@@ -65,14 +66,14 @@ def pred_image_viz(x_test, predictions):
 # test to evaluate the performance of the model
 
 
-def train_dev_test_split(data, label, train_frac, dev_frac):
+def train_dev_test_split(data, label, train_frac, dev_frac, random_state):
 
     dev_test_frac = 1 - train_frac
     x_train, x_dev_test, y_train, y_dev_test = train_test_split(
-        data, label, test_size=dev_test_frac, shuffle=True
+        data, label, test_size=dev_test_frac, shuffle=True,random_state=random_state
     )
     x_test, x_dev, y_test, y_dev = train_test_split(
-        x_dev_test, y_dev_test, test_size=(dev_frac) / dev_test_frac, shuffle=True
+        x_dev_test, y_dev_test, test_size=(dev_frac) / dev_test_frac, shuffle=True,random_state=random_state
     )
 
     return x_train, y_train, x_dev, y_dev, x_test, y_test
@@ -133,7 +134,11 @@ def tune_and_save(
     best_model_name = model_type + "_" + best_param_config + ".joblib"
     if model_path == None:
         model_path = best_model_name
+    else:
+        model_path = model_path+best_model_name
+
     dump(best_model, model_path)
+
 
     print("Best hyperparameters were:" + str(best_h_params))
 
@@ -144,3 +149,13 @@ def tune_and_save(
 
 def macro_f1(y_true, y_pred, pos_label=1):
     return f1_score(y_true, y_pred, pos_label=pos_label, average='macro', zero_division='warn')
+
+def save_model_result(best_model_path,x_test,y_test,clf_name,random_state):
+    clf = load(best_model_path)
+    y_pred = clf.predict(x_test)
+    report = classification_report(y_test, y_pred,output_dict=True)
+    with open(f"./results/{clf_name}_{random_state}.txt","+w") as obj:
+        obj.write(f"test accuracy : {report['accuracy']}\n")
+        obj.write(f"test macro-f1 : {report['macro avg']['f1-score']}\n")
+        obj.write(f"model save at {best_model_path}\n")
+

@@ -3,8 +3,6 @@ from flask import request
 from joblib import load
 
 app = Flask(__name__)
-model_path = "svm_gamma=0.0005_C=2.joblib"
-model = load(model_path)
 
 @app.route("/")
 def hello_world():
@@ -28,6 +26,8 @@ def sum():
 @app.route("/predict", methods=['POST'])
 def predict_digit():
     image = request.json['image']
-    print("done loading")
+    model_name = request.json['model_name']
+    model = load(model_name)
+    print("Model loaded")
     predicted = model.predict([image])
     return {"y_predicted":int(predicted[0])}
