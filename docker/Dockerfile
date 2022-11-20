@@ -1,7 +1,22 @@
-# FROM ubuntu:latest
-FROM python:3.8.1
-COPY mlops /exp/mlops
+# start by pulling the python image
+FROM python:3.8.15-slim-buster
+
+RUN python3 -m pip install --upgrade pip
+
+# copy the requirements file into the image
 COPY ./requirements.txt /exp/requirements.txt
-RUN pip3 install --no-cache-dir -r /exp/requirements.txt
+
+# switch working directory
 WORKDIR /exp
-CMD ["python3", "./mlops/plot_graphs.py"]
+
+# install the dependencies and packages in the requirements file
+RUN pip3 install -r requirements.txt
+
+# copy every content from the local file to the image
+COPY ./api/app.py /exp
+
+EXPOSE 5000
+
+ENV FLASK_APP=app
+
+CMD ["python3","-m", "flask","run","--host=0.0.0.0" ]
